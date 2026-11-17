@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101827">
+  <meta name="description" content="TG Finder — простая визитка для поиска публичных Telegram-профилей и добровольно опубликованных контактов.">
+  <title>TG Finder — Telegram contacts</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root { color-scheme: dark; --bg:#0b1220; --panel:#121d30; --line:#26364f; --muted:#9aabc3; --text:#f4f7fb; --blue:#36aeea; --blue2:#168acd; }
+    * { box-sizing:border-box }
+    body { margin:0; min-height:100vh; font-family:Inter,system-ui,sans-serif; color:var(--text); background:radial-gradient(ellipse at 50% -20%,#1b4265 0,transparent 55%),var(--bg); display:grid; place-items:center; padding:28px 16px; }
+    .wrap { width:min(100%,680px) }
+    header { display:flex; align-items:center; gap:13px; margin-bottom:28px }
+    .logo { width:48px;height:48px;border-radius:16px;background:linear-gradient(145deg,#42c4f5,#1686d1);display:grid;place-items:center;box-shadow:0 10px 30px #1686d144 }
+    .logo svg { width:27px;height:27px;fill:white }
+    h1 { font-size:20px; margin:0; letter-spacing:-.5px }
+    .sub { color:var(--muted);font-size:12px;margin-top:4px }
+    .card { background:linear-gradient(160deg,#15243a,#101a2b);border:1px solid var(--line);border-radius:25px;padding:clamp(22px,5vw,38px);box-shadow:0 24px 80px #0005 }
+    .eyebrow { display:inline-flex;align-items:center;gap:7px;color:#8edcff;background:#15334a;border:1px solid #245372;padding:7px 11px;border-radius:99px;font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase }
+    h2 { font-size:clamp(28px,6vw,40px);line-height:1.12;letter-spacing:-1.5px;margin:19px 0 12px }
+    .lead { color:var(--muted);line-height:1.65;font-size:14px;margin:0 0 27px;max-width:520px }
+    label { display:block;font-size:12px;font-weight:700;color:#c8d5e7;margin-bottom:9px }
+    .inputrow { display:flex;gap:9px;flex-wrap:wrap }
+    input { flex:1 1 240px;min-width:0;border:1px solid #344760;background:#0b1525;color:white;border-radius:13px;padding:15px 16px;font:inherit;font-size:15px;outline:none;transition:.2s }
+    input:focus { border-color:var(--blue);box-shadow:0 0 0 3px #36aeea22 }
+    button { border:0;border-radius:13px;padding:0 20px;min-height:51px;background:linear-gradient(135deg,var(--blue),var(--blue2));color:white;font:700 14px Inter,sans-serif;cursor:pointer;transition:transform .15s,filter .15s }
+    button:hover { filter:brightness(1.1);transform:translateY(-1px) }
+    button:active { transform:translateY(0) }
+    .hint { color:#8294ad;font-size:11px;line-height:1.55;margin:10px 2px 0 }
+    .result { display:none;margin-top:18px;padding:16px;border:1px solid var(--line);border-radius:14px;background:#0c1728;line-height:1.6;font-size:13px }
+    .result.show { display:block }
+    .result strong { display:block;color:#f5f8ff;margin-bottom:5px }
+    .result a { color:#75d3ff;text-decoration:none;overflow-wrap:anywhere }
+    .result a:hover { text-decoration:underline }
+    .divider { height:1px;background:var(--line);margin:27px 0 22px }
+    .notice { display:flex;gap:12px;align-items:flex-start;color:#a9bad0;font-size:12px;line-height:1.6 }
+    .notice b { color:#e8f2ff }
+    .shield { flex:none;width:28px;height:28px;border-radius:9px;background:#20354b;display:grid;place-items:center }
+    footer { color:#71839d;font-size:11px;text-align:center;margin:19px 0 0 }
+    footer a { color:#9ab4d2;text-decoration:none }
+    @media(max-width:480px) { button { width:100% } .card { border-radius:20px } }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header>
+      <div class="logo" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M21.7 4.4 18.5 20c-.2 1.1-.9 1.4-1.8.9l-5-3.7-2.4 2.3c-.3.3-.5.5-1 .5l.4-5.1 9.3-8.4c.4-.4-.1-.6-.6-.2L6 13.5 1.1 12c-1.1-.3-1.1-1 .2-1.5L20.4 3c.9-.3 1.7.2 1.3 1.4Z"/></svg>
+      </div>
+      <div><h1>TG Finder</h1><div class="sub">Telegram contact card · GitHub Pages</div></div>
+    </header>
+
+    <section class="card">
+      <span class="eyebrow">✦ Simple · Private · Free</span>
+      <h2>Найди публичный<br>Telegram-профиль</h2>
+      <p class="lead">Введи публичный @username или ссылку на Telegram. Сервис сформирует ссылку для открытия профиля — без регистрации и без отправки введённых данных на наш сервер.</p>
+
+      <form id="lookupForm">
+        <label for="handle">Telegram username или ссылка</label>
+        <div class="inputrow">
+          <input id="handle" type="text" placeholder="@username или https://t.me/username" autocomplete="off" maxlength="100" required>
+          <button type="submit">Открыть профиль ↗</button>
+        </div>
+        <p class="hint">Поддерживаются публичные username и ссылки t.me. Поиск аккаунтов по произвольным номерам телефонов не выполняется.</p>
+      </form>
+
+      <div id="result" class="result" role="status" aria-live="polite"></div>
+      <div class="divider"></div>
+      <div class="notice">
+        <div class="shield">🛡️</div>
+        <div><b>Приватность прежде всего.</b><br>Telegram не гарантирует обнаружение аккаунта по номеру: это зависит от настроек владельца. Этот сайт не перебирает номера, не собирает контакты и не обходит настройки приватности.</div>
+      </div>
+    </section>
+    <footer>Open-source mini project · <a href="https://github.com/" target="_blank" rel="noopener noreferrer">GitHub</a></footer>
+  </main>
+  <script>
+    const form = document.querySelector("#lookupForm");
+    const field = document.querySelector("#handle");
+    const result = document.querySelector("#result");
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const raw = field.value.trim();
+      let username = raw;
+
+      try {
+        if (/^https?:\\/\\//i.test(raw)) {
+          const url = new URL(raw);
+          if (!/(^|\\.)t\\.me$/i.test(url.hostname)) throw new Error("domain");
+          username = url.pathname.split("/").filter(Boolean)[0] || "";
+        } else {
+          username = raw.replace(/^@/, "");
+        }
+
+        if (!/^[a-zA-Z0-9_]{5,32}$/.test(username)) throw new Error("username");
+
+        const link = `https://t.me/${encodeURIComponent(username)}`;
+        result.innerHTML = `<strong>Публичная ссылка подготовлена</strong><a href="${link}" target="_blank" rel="noopener noreferrer">${link}</a><div style="margin-top:7px;color:#9aabc3">Открой ссылку в Telegram. Это не подтверждает, что аккаунт существует или принадлежит конкретному человеку.</div>`;
+        result.classList.add("show");
+      } catch {
+        result.textContent = "Не удалось распознать username. Введи @username (от 5 до 32 символов) или публичную ссылку вида https://t.me/username.";
+        result.classList.add("show");
+      }
+    });
+  </script>
+</body>
+</html>
