@@ -183,10 +183,9 @@
       result.classList.add("show");
 
       // Open the universal Telegram link directly from the submit gesture.
-      const opened = window.open(profile.url, "_blank", "noopener,noreferrer");
-      if (!opened) {
-        heading.textContent = "Браузер заблокировал новое окно";
-      }
+      const opened = window.open(profile.url, "_blank");
+      if (opened) opened.opener = null;
+      else heading.textContent = "Браузер заблокировал новое окно — нажми на ссылку ниже";
     });
   </script>
 </body>
