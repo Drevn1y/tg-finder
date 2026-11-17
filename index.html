@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#229ED9">
-  <meta name="description" content="TG Finder — бесплатная мини-визитка для открытия публичных Telegram-профилей по username, ссылке t.me или номеру телефона. Без регистрации и сервера.">
+  <meta name="description" content="TG Finder — бесплатная мини-визитка для открытия Telegram-профилей по username или номеру телефона.">
   <title>TG Finder — Telegram profile helper</title>
   <style>
     :root{color-scheme:light;--tg:#229ed9;--tg-dark:#168ac0;--ink:#182533;--muted:#71808e;--line:#e5ebef;--paper:#fff;--bg:#dce8ee}
@@ -36,7 +36,7 @@
     .result{display:none;margin-top:17px;padding:15px;border:1px solid #d9eaf2;border-radius:12px;background:#f1f9fc;font-size:13px;line-height:1.6;overflow-wrap:anywhere}
     .result.show{display:block}
     .result strong{display:block;color:#263d4b;margin-bottom:5px}
-    .result a{color:#168ac0;text-decoration:none;font-weight:650}
+    .result a{color:#168ac0;text-decoration:none;font-weight:700}
     .result a:hover{text-decoration:underline}
     .divider{height:1px;background:var(--line);margin:25px 0 20px}
     .privacy{display:flex;gap:11px;align-items:flex-start;color:#75838d;font-size:12px;line-height:1.65}
@@ -65,22 +65,22 @@
       <article class="bubble">
         <span class="eyebrow">✦ Мини-инструмент для Telegram</span>
         <h1>Открой Telegram-профиль</h1>
-        <p class="lead">Введи <b>@username</b>, ссылку <b>t.me</b> или номер телефона в международном формате с плюсом — TG Finder подготовит ссылку для открытия в Telegram.</p>
+        <p class="lead">Введи username, ссылку t.me или номер телефона. Для местного номера Узбекистана код +998 добавится автоматически. Для других стран укажи код страны — например, 1 для США.</p>
 
         <form id="lookupForm">
           <label for="handle">Username, ссылка или номер телефона</label>
           <div class="input-row">
-            <input id="handle" type="text" placeholder="@username или +998901234567" autocomplete="off" inputmode="tel" maxlength="150" required>
-            <button type="submit">Открыть профиль&nbsp; ↗</button>
+            <input id="handle" type="text" placeholder="@username или 901234567" autocomplete="off" inputmode="text" maxlength="150" required>
+            <button type="submit">Открыть в Telegram&nbsp; ↗</button>
           </div>
-          <p class="hint">Примеры: @telegram · https://t.me/telegram · +998901234567</p>
+          <p class="hint">Примеры: username · @username · https://t.me/username · 901234567 · +1 202 555 0123</p>
         </form>
 
         <div id="result" class="result" role="status" aria-live="polite"></div>
         <div class="divider"></div>
         <div class="privacy">
           <div class="privacy-icon">🔒</div>
-          <div><b>Твои данные остаются у тебя.</b><br>Введённый текст обрабатывается прямо в браузере. Сайт не отправляет введённые данные на сервер. Для номера формируется ссылка https://t.me/+номер; Telegram откроет профиль только если это разрешено настройками приватности владельца.</div>
+          <div><b>Твои данные остаются у тебя.</b><br>Ввод обрабатывается прямо в браузере. Для номера Telegram может не показать аккаунт, если владелец запретил находить себя по номеру. Это ограничение приватности Telegram, обойти его нельзя.</div>
         </div>
       </article>
 
@@ -98,58 +98,95 @@
     const field = document.querySelector("#handle");
     const result = document.querySelector("#result");
 
-    form.addEventListener("submit", (event) => {
-      event.preventDefault();
-      const raw = field.value.trim();
-      let link = "";
-      let note = "";
+    function normalizePhone(value) {
+      let compact = value.replace(/[\s().-]/g, "");
+      if (compact.startsWith("00")) compact = "+" + compact.slice(2);
+      if (compact.startsWith("+")) return compact;
 
-      // Telegram phone links use the international number after +.
-      const phoneCandidate = raw.replace(/[\\s().-]/g, "");
-      const isPhone = /^\\+?\\d+$/.test(phoneCandidate);
+      // Uzbekistan local numbers: 9 digits -> +998.
+      if (/^\d{9}$/.test(compact)) return "+998" + compact;
+      // Country code typed without plus.
+      if (/^998\d{9}$/.test(compact)) return "+" + compact;
+      if (/^1\d{10}$/.test(compact)) return "+" + compact;
 
-      if (isPhone) {
-        const digits = phoneCandidate.replace(/^\\+/, "");
-        if (!/^\\d{7,15}$/.test(digits)) {
-          result.textContent = "Проверь номер: укажи международный формат с кодом страны, например +998901234567.";
-          result.classList.add("show");
-          return;
+      // For other international numbers, ask the user to include the country code.
+      return compact;
+    }
+
+    function getTelegramLink(raw) {
+      const value = raw.trim();
+      if (!value) throw new Error("empty");
+
+      if (/^(?:\+?\d|00)/.test(value.replace(/[\s().-]/g, ""))) {
+        const normalized = normalizePhone(value);
+        if (!/^\+\d{7,15}$/.test(normalized)) {
+          throw new Error("Укажи номер с кодом страны. Для Узбекистана достаточно 9 цифр — +998 добавится автоматически.");
         }
-        link = "https://t.me/+" + digits;
-        note = "Telegram откроет чат/профиль, только если настройки приватности пользователя позволяют находить его по номеру. Это не гарантирует, что аккаунт будет найден.";
-      } else {
-        let username = raw;
-        try {
-          if (/^https?:\\/\\//i.test(raw)) {
-            const url = new URL(raw);
-            if (url.hostname !== "t.me" && !url.hostname.endsWith(".t.me")) throw new Error("domain");
-            username = url.pathname.split("/").filter(Boolean)[0] || "";
-          } else {
-            username = raw.replace(/^@/, "");
-          }
-          if (!/^[a-zA-Z0-9_]{5,32}$/.test(username)) throw new Error("username");
-          link = "https://t.me/" + encodeURIComponent(username);
-          note = "Ссылка не подтверждает существование аккаунта или личность его владельца.";
-        } catch {
-          result.textContent = "Не удалось распознать ввод. Укажи @username, ссылку t.me или номер в международном формате, например +998901234567.";
-          result.classList.add("show");
-          return;
-        }
+        return {
+          display: normalized,
+          url: "https://t.me/+" + normalized.slice(1),
+          note: "Если Telegram не находит аккаунт или не даёт написать, значит пользователь мог запретить поиск по номеру в настройках приватности."
+        };
       }
 
+      let username = value;
+      if (/^https?:\/\//i.test(value)) {
+        const parsed = new URL(value);
+        if (parsed.hostname !== "t.me" && parsed.hostname !== "www.t.me") throw new Error("Вставь ссылку именно с домена t.me.");
+        username = parsed.pathname.split("/").filter(Boolean)[0] || "";
+      }
+      username = username.replace(/^@/, "");
+      if (!/^[a-zA-Z0-9_]{5,32}$/.test(username)) {
+        throw new Error("Username должен содержать от 5 до 32 символов: латинские буквы, цифры или подчёркивание.");
+      }
+      return {
+        display: "@" + username,
+        url: "https://t.me/" + encodeURIComponent(username),
+        note: "Открывается именно указанный публичный username. Если профиль не найден, проверь написание."
+      };
+    }
+
+    field.addEventListener("blur", () => {
+      const value = field.value.trim();
+      if (!value) return;
+      try {
+        const compact = value.replace(/[\s().-]/g, "");
+        if (/^(?:\+?\d|00)/.test(compact)) field.value = normalizePhone(value);
+        else if (!/^https?:\/\//i.test(value)) field.value = "@" + value.replace(/^@/, "");
+      } catch (_) {}
+    });
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      let profile;
+      try {
+        profile = getTelegramLink(field.value);
+      } catch (error) {
+        result.textContent = error.message || "Не удалось распознать ввод.";
+        result.classList.add("show");
+        return;
+      }
+
+      field.value = profile.display;
       result.replaceChildren();
       const heading = document.createElement("strong");
-      heading.textContent = "Ссылка готова к открытию ✨";
+      heading.textContent = "Открываю " + profile.display + " в Telegram…";
       const anchor = document.createElement("a");
-      anchor.href = link;
+      anchor.href = profile.url;
       anchor.target = "_blank";
       anchor.rel = "noopener noreferrer";
-      anchor.textContent = link;
+      anchor.textContent = "Если Telegram не открылся — нажми здесь";
       const description = document.createElement("div");
       description.style.cssText = "margin-top:7px;color:#71808e";
-      description.textContent = note;
+      description.textContent = profile.note;
       result.append(heading, anchor, description);
       result.classList.add("show");
+
+      // Open the universal Telegram link directly from the submit gesture.
+      const opened = window.open(profile.url, "_blank", "noopener,noreferrer");
+      if (!opened) {
+        heading.textContent = "Браузер заблокировал новое окно";
+      }
     });
   </script>
 </body>
