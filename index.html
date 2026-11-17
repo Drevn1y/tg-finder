@@ -105,6 +105,8 @@
 
       // Uzbekistan local numbers: 9 digits -> +998.
       if (/^\d{9}$/.test(compact)) return "+998" + compact;
+      // Ten digits default to North American +1; other countries need an explicit code.
+      if (/^\d{10}$/.test(compact)) return "+1" + compact;
       // Country code typed without plus.
       if (/^998\d{9}$/.test(compact)) return "+" + compact;
       if (/^1\d{10}$/.test(compact)) return "+" + compact;
