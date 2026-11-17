@@ -88,9 +88,9 @@
       let username = raw;
 
       try {
-        if (/^https?:\\/\\//i.test(raw)) {
+        if (raw.toLowerCase().startsWith("https://") || raw.toLowerCase().startsWith("http://")) {
           const url = new URL(raw);
-          if (!/(^|\\.)t\\.me$/i.test(url.hostname)) throw new Error("domain");
+          if (url.hostname !== "t.me" && !url.hostname.endsWith(".t.me")) throw new Error("domain");
           username = url.pathname.split("/").filter(Boolean)[0] || "";
         } else {
           username = raw.replace(/^@/, "");
